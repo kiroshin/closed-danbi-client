@@ -1,0 +1,70 @@
+name: Release and Sign
+
+on:
+  push:
+    tags:
+      - 'v*'
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+  
+jobs:
+  build-and-release:
+    runs-on: windows-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Install NSIS
+        run: choco install nsis -y
+
+      - name: Decode PFX
+        shell: powershell
+        run: |
+          $pfx_byte = [System.Convert]::FromBase64String("${{ secrets.PFX_BASE64 }}")
+          [IO.File]::WriteAllBytes("${{ github.workspace }}\codesign.pfx", $pfx_byte)
+
+      - name: Run Build and Sign Script
+        shell: powershell
+        run: |
+          $RawTag = "${{ github.ref_name }}".TrimStart('v')
+          ./build.ps1 -PFX_FILE "codesign.pfx" -PFX_PASS "${{ secrets.PFX_PASSWORD }}" -VERSION "$RawTag"
+
+      # - name: Create Release
+      #   uses: softprops/action-gh-release@v2
+      #   with:
+      #     tag_name: ${{ github.ref_name }}
+      #     files: danbi-setup.exe
+      #   env:
+      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create Release
+        uses: ncipollo/release-action@v1
+        with:
+          tag: ${{ github.ref_name }}
+          artifacts: "danbi-setup.exe"
+          token: ${{ secrets.GITHUB_TOKEN }}
+          allowUpdates: true
+
+      - name: Cleanup
+        shell: powershell
+        run: |
+          git config --global user.name "${{ github.actor }}"
+          git config --global user.email "${{ github.actor }}@users.noreply.github.com"
+          git checkout --orphan latest-branch
+          git rm -rf . --cached >$null 2>&1
+          git add ".github/*"
+          git add ".gitignore"
+          git add "build.ps1"
+          git add "codesign.cer"
+          git add "setup.nsi"
+          git add "README.md"
+          git commit -m "Released (${{ github.ref_name }})"
+          git branch -M main
+          git push -f origin main
+
+        
