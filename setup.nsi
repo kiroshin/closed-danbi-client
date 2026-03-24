@@ -12,7 +12,8 @@
 !define CERT_CODE     "25A7A1C8DA4B989847181110594E7BF5"
 !define INST_DIR      "${SUB_NAME}-client"
 !define OUT_FILE      "${SUB_NAME}-setup.exe"
-!define UNINST_KEY    "Software\Microsoft\Windows\CurrentVersion\Uninstall\${APP_NAME}"
+!define APP_IDENT     "com.mulgrim.${APP_NAME}"
+!define UNINST_KEY    "Software\Microsoft\Windows\CurrentVersion\Uninstall\${APP_IDENT}"
 !define GROUP_KEY     "Software\${ORG_NAME}"
 !define SOFT_KEY      "Software\${ORG_NAME}\${APP_NAME}"
 
@@ -93,6 +94,7 @@ Section "Install"
   ; 제어판(appwiz.cpl)에 등록(레지스트리)
   SetRegView 64
   WriteRegStr HKLM "${UNINST_KEY}" "DisplayName" "${APP_NAME}"
+  WriteRegStr HKLM "${UNINST_KEY}" "AppUserModelID" "${APP_IDENT}"
   WriteRegStr HKLM "${UNINST_KEY}" "UninstallString" '"$INSTDIR\uninstall.exe"'
   WriteRegStr HKLM "${UNINST_KEY}" "DisplayIcon" "$INSTDIR\${EXE_NAME}"
   WriteRegStr HKLM "${UNINST_KEY}" "Publisher" "${PUBLISHER}"
@@ -109,7 +111,7 @@ Section "Install"
   ; (IfSilent [Silent인_경우_이동] [Silent가_아닌_경우_이동])
   ; 현재옵션 0: 조용모드는 아래 0번째줄, +2: 조용모드 아니면 아래 2줄로 이동
   IfSilent 0 +2
-    Exec '"$INSTDIR\myapp.exe"'
+    Exec '"$INSTDIR\${EXE_NAME}"'
 
 SectionEnd
 
