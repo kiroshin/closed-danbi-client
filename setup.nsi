@@ -108,10 +108,13 @@ Section "Install"
   CreateShortcut "$DESKTOP\${DSP_NAME}.lnk" "$INSTDIR\${EXE_NAME}"
 
   ; 조용모드 /S 옵션으로 실행되었을 때
-  ; (IfSilent [Silent인_경우_이동] [Silent가_아닌_경우_이동])
-  ; 현재옵션 0: 조용모드는 아래 0번째줄, +2: 조용모드 아니면 아래 2줄로 이동
-  IfSilent 0 +2
-    Exec '"$INSTDIR\${EXE_NAME}"'
+  ; 주의: ${If} ${Silent} 는 !include "LogicLib.nsh" 가 있어야 함.
+  ; 기본 IfSilent [참일경우줄번호] [거짓일경우 줄번호] - 0부터 시작
+  ${If} ${Silent}
+    ${IfFileExists} "$INSTDIR\${EXE_NAME}"
+      Exec '"$INSTDIR\${EXE_NAME}"'
+    ${EndIf}
+  ${EndIf}
 
 SectionEnd
 
